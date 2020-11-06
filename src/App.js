@@ -1,25 +1,42 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect, useRef } from "react";
 
-function App() {
+import Directus from "./directus";
+
+const App = () => {
+  const [webinars, setWebinars] = useState([]);
+  const [more, setMore] = useState("false");
+  const componentIsMounted = useRef(true);
+
+  useEffect(() => {
+    // each useEffect can return a cleanup function
+    return () => {
+      componentIsMounted.current = false;
+    };
+  }, []); // no extra deps => the cleanup function run this on component unmount
+
+  useEffect(() => {
+    async function fetchWebinars() {
+      try {
+        const directUsClient = await Directus.getInstance();
+        const webinarsResp = await directUsClient.getItems("webinars", {
+          fields: "*,image.*,speakers.*.*",
+        });
+
+        if (componentIsMounted.current) {
+          setWebinars(webinarsResp.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    fetchWebinars();
+  }, [more]);
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <pre>{JSON.stringify(webinars, null, 2)}</pre>
     </div>
   );
-}
+};
 
 export default App;
